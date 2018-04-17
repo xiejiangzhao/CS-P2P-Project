@@ -12,10 +12,10 @@ print('Wait for Connection...')
  
 conn, addr = s.accept()
 print('Connected by '+addr[0])
-with open('README.md','rb') as f:
-    data=f.read(5)
-    data=f.read(5)
-    conn.send(data)
+with open('A.mp3','rb') as f:
+    while True:
+        data=f.read(1460)
+        conn.send(data)
         
 
 # conn.close()
