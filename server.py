@@ -1,5 +1,5 @@
 import socket
-
+import struct
 HOST = '127.0.0.1'
 PORT = 8001
 
@@ -15,7 +15,12 @@ print('Connected by '+addr[0])
 with open('A.mp3','rb') as f:
     while True:
         data=f.read(1460)
-        conn.send(data)
-        
+        data_len=len(data)
+        data_head=struct.pack('i',data_len)
+        conn.send(data_head+data)
+        if(len(data)<1460) :
+            data_head=struct.pack('i',0)
+            conn.send(data_head)
+            break
 
 # conn.close()
