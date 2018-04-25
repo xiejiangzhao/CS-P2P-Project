@@ -25,7 +25,7 @@ def recv(obj,length):
     return data
 
 def comp(tuple1,tuple2):
-    for i in range(4):
+    for i in range(3):
         if tuple1[i]!=tuple2[i]:
             return False
     return True
@@ -38,12 +38,16 @@ def Send_Dict():
     data_len=len(files_data)
     data_head=struct.pack('hhhh',service_Type,service_Num,Version,data_len)
     connect.send(data_head+files_data)
+
+def Send_File():
+    pass
 while True:
     request_head=recv(connect,8)
     head_data=struct.unpack('hhhh',request_head)
-    if comp(head_data,(0,0,1,0)):
-        print("ls command get")
+    if comp(head_data,(0,0,1)):
         Send_Dict()
+    elif comp(head_data,(1,0,1)):
+        Send_File()
     else:
         a=input()
 
