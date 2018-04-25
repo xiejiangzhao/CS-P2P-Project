@@ -1,3 +1,3 @@
 import struct
-a=4
+a=65535
 b=struct.pack('i',a)

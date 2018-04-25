@@ -1,26 +1,49 @@
 import socket
 import struct
+import os
+import pickle
 HOST = '127.0.0.1'
-PORT = 8001
+PORT = 8002
+session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+service_Type=None
+service_Num=None
+Version=None
+data_len=None
+def Creat_Connect():
+    session.bind((HOST, PORT))
+    session.listen(1)
+    print("Waiting for connection")
+    connect,addr=session.accept()
+    print("Connect to "+str(addr))
+    return connect
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen(1)
+connect=Creat_Connect()
+def recv(obj,length):
+    data=b''
+    while len(data)<length:
+        data+=obj.recv(length-len(data))
+    return data
 
-print('Server runs at '+HOST+' '+str(PORT))
-print('Wait for Connection...')
- 
-conn, addr = s.accept()
-print('Connected by '+addr[0])
-with open('A.mp3','rb') as f:
-    while True:
-        data=f.read(1460)
-        data_len=len(data)
-        data_head=struct.pack('i',data_len)
-        conn.send(data_head+data)
-        if(len(data)<1460) :
-            data_head=struct.pack('i',0)
-            conn.send(data_head)
-            break
+def comp(tuple1,tuple2):
+    for i in range(4):
+        if tuple1[i]!=tuple2[i]:
+            return False
+    return True
 
-# conn.close()
+def Send_Dict():
+    files_data=pickle.dumps(os.listdir("./"))
+    service_Type=0
+    service_Num=0
+    Version=1
+    data_len=len(files_data)
+    data_head=struct.pack('hhhh',service_Type,service_Num,Version,data_len)
+    connect.send(data_head+files_data)
+while True:
+    request_head=recv(connect,8)
+    head_data=struct.unpack('hhhh',request_head)
+    if comp(head_data,(0,0,1,0)):
+        print("ls command get")
+        Send_Dict()
+    else:
+        a=input()
+
