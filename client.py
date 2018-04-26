@@ -1,5 +1,6 @@
 import sys
 import socket
+import os
 import struct
 import pickle
 HOST = '127.0.0.1'
@@ -31,12 +32,20 @@ def List_Dict():
     return
 
 def Down_File(filename):
-    with open("filename",'rb') as f:
-        file_data=f.read(1460)
-        while len(file_data)>0:
-            data_head=Build_Head(1,0,1,len(file_data))
-            session.send(data_head+file_data)
-        f.close()
+    filename_byte=pickle.dumps(filename)
+    session.send(Build_Head(1,0,1,len(filename_byte))+filename_byte)
+    save_name=input("另存为:")
+    file_len_sum=0
+    with open(save_name,'wb+') as f:
+        file_data=b''
+        file_len=struct.unpack('hhhh',recv(session,8))[3]
+        while file_len>0:
+            file_len_sum+=file_len
+            file_data=recv(session,file_len)
+            f.write(file_data)
+            file_len=struct.unpack('hhhh',recv(session,8))[3]
+        print("传输结束,共"+str(file_len_sum)+"个字节")
+    f.close()
 
 def Terminal():
     command=input(">>>")
@@ -44,7 +53,7 @@ def Terminal():
         if command=='ls':
             List_Dict()
         elif command=='download':
-            filename=input("输入文件名:"):
+            filename=input("输入文件名:")
             Down_File(filename)
         else:
             print("命令未找到")
