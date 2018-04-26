@@ -2,10 +2,11 @@ import sys
 import socket
 import os
 import struct
-import pickle
+import pickle,ssl
 HOST = '127.0.0.1'
 PORT = 8002
-session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+session = ssl.wrap_socket(s, ca_certs="./mycertfile.pem", cert_reqs=ssl.CERT_REQUIRED)
 service_Type=None
 service_Num=None
 Version=None
@@ -34,9 +35,8 @@ def List_Dict():
 def Down_File(filename):
     filename_byte=pickle.dumps(filename)
     session.send(Build_Head(1,0,1,len(filename_byte))+filename_byte)
-    save_name=input("另存为:")
     file_len_sum=0
-    with open(save_name,'wb+') as f:
+    with open(filename,'wb+') as f:
         file_data=b''
         file_len=struct.unpack('hhhh',recv(session,8))[3]
         while file_len>0:
@@ -47,17 +47,51 @@ def Down_File(filename):
         print("传输结束,共"+str(file_len_sum)+"个字节")
     f.close()
 
+def Del_File(filename):
+    filename_byte=pickle.dumps(filename)
+    data_head=Build_Head(0,1,1,len(filename_byte))
+    session.send(data_head+filename_byte)
+    response_head=recv(session,8)
+    length=struct.unpack('hhhh',response_head)[3]
+    response=recv(session,length)
+    data=pickle.loads(response)
+    print(data)
+    return
+
+def Send_File(filename):
+    filename_byte=pickle.dumps(filename)
+    session.send(Build_Head(1,2,1,len(filename_byte))+filename_byte)
+    file_len_sum=0
+    with open(filename,'rb') as f:
+        file_data=b'0'
+        while len(file_data)!=0:
+            file_data=f.read(1460)
+            data_head=Build_Head(1,3,1,len(file_data))
+            file_len_sum+=len(file_data)
+            session.send(data_head+file_data)
+        print("传输结束,共"+str(file_len_sum)+"个字节")
+        f.close()
+    f.close()
 def Terminal():
-    command=input(">>>")
+    userinput=input(">>>").split()
+    command=userinput[0]
+    if len(userinput)>1:
+        param=userinput[1]
     while command!='exit':
         if command=='ls':
             List_Dict()
         elif command=='download':
-            filename=input("输入文件名:")
-            Down_File(filename)
+            Down_File(param)
+        elif command=='del':
+            Del_File(param)
+        elif command=='upload':
+            Send_File(param)
         else:
             print("命令未找到")
-        command=input(">>>")
+        userinput=input(">>>").split()
+        command=userinput[0]
+        if len(userinput)>1:
+            param=userinput[1]
 
 def recv(obj,length):
     data=b''
@@ -67,5 +101,7 @@ def recv(obj,length):
 
 Connect()
 Terminal()
+data_head=Build_Head(2,3,3,0)
+session.send(data_head)
 session.close()
 
