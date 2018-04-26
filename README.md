@@ -7,4 +7,4 @@ Computer-Network Homework
 - [x] 下载文件
 - [x] 上传文件
 - [x] 删除文件
-- [ ] 加密
+- [x] 加密

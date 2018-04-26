@@ -2,8 +2,11 @@ import socket
 import struct
 import os
 import pickle
+import ssl
 HOST = '127.0.0.1'
 PORT = 8002
+context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+context.load_cert_chain(certfile="mycertfile.pem", keyfile="mykeyfile.pem")
 session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 service_Type=None
 service_Num=None
@@ -19,8 +22,9 @@ def Creat_Connect():
     session.listen(1)
     print("Waiting for connection")
     connect,addr=session.accept()
+    ssl_conn = context.wrap_socket(connect, server_side=True)
     print("Connect to "+str(addr))
-    return connect
+    return ssl_conn
 
 connect=Creat_Connect()
 def recv(obj,length):

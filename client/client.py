@@ -2,10 +2,11 @@ import sys
 import socket
 import os
 import struct
-import pickle
+import pickle,ssl
 HOST = '127.0.0.1'
 PORT = 8002
-session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+session = ssl.wrap_socket(s, ca_certs="./mycertfile.pem", cert_reqs=ssl.CERT_REQUIRED)
 service_Type=None
 service_Num=None
 Version=None
