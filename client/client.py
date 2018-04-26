@@ -34,9 +34,8 @@ def List_Dict():
 def Down_File(filename):
     filename_byte=pickle.dumps(filename)
     session.send(Build_Head(1,0,1,len(filename_byte))+filename_byte)
-    save_name=input("另存为:")
     file_len_sum=0
-    with open(save_name,'wb+') as f:
+    with open(filename,'wb+') as f:
         file_data=b''
         file_len=struct.unpack('hhhh',recv(session,8))[3]
         while file_len>0:
@@ -58,20 +57,40 @@ def Del_File(filename):
     print(data)
     return
 
+def Send_File(filename):
+    filename_byte=pickle.dumps(filename)
+    session.send(Build_Head(1,2,1,len(filename_byte))+filename_byte)
+    file_len_sum=0
+    with open(filename,'rb') as f:
+        file_data=b'0'
+        while len(file_data)!=0:
+            file_data=f.read(1460)
+            data_head=Build_Head(1,3,1,len(file_data))
+            file_len_sum+=len(file_data)
+            session.send(data_head+file_data)
+        print("传输结束,共"+str(file_len_sum)+"个字节")
+        f.close()
+    f.close()
 def Terminal():
-    command=input(">>>")
+    userinput=input(">>>").split()
+    command=userinput[0]
+    if len(userinput)>1:
+        param=userinput[1]
     while command!='exit':
         if command=='ls':
             List_Dict()
         elif command=='download':
-            filename=input("输入文件名:")
-            Down_File(filename)
+            Down_File(param)
         elif command=='del':
-            filename=input("输入文件名:")
-            Del_File(filename)
+            Del_File(param)
+        elif command=='upload':
+            Send_File(param)
         else:
             print("命令未找到")
-        command=input(">>>")
+        userinput=input(">>>").split()
+        command=userinput[0]
+        if len(userinput)>1:
+            param=userinput[1]
 
 def recv(obj,length):
     data=b''

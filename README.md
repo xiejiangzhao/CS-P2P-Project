@@ -6,5 +6,5 @@ Computer-Network Homework
 - [x] 查询文件列表
 - [x] 下载文件
 - [ ] 上传文件
-- [ ] 删除文件
+- [x] 删除文件
 - [ ] 加密

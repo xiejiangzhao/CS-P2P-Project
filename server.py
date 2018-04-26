@@ -58,6 +58,21 @@ def Send_File(filename_len):
         print("传输结束,共"+str(file_len_sum)+"个字节")
         f.close()
 
+def Save_File(filename_len):
+    filename_byte=recv(connect,filename_len)
+    filename=pickle.loads(filename_byte)
+    file_len_sum=0
+    with open(filename,'wb+') as f:
+        file_data=b''
+        file_len=struct.unpack('hhhh',recv(connect,8))[3]
+        while file_len>0:
+            file_len_sum+=file_len
+            file_data=recv(connect,file_len)
+            f.write(file_data)
+            file_len=struct.unpack('hhhh',recv(connect,8))[3]
+        print("传输结束,共"+str(file_len_sum)+"个字节")
+    f.close()
+    pass
 def Del_File(filename_len):
     filename_byte=recv(connect,filename_len)
     filename=pickle.loads(filename_byte)
@@ -79,6 +94,8 @@ while True:
         Send_File(head_data[3])
     elif comp(head_data,(0,1,1)):
         Del_File(head_data[3])
+    elif comp(head_data,(1,2,1)):
+        Save_File(head_data[3])
     else:
         a=input()
 
