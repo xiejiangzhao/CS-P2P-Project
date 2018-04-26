@@ -100,5 +100,7 @@ def recv(obj,length):
 
 Connect()
 Terminal()
+data_head=Build_Head(2,3,3,0)
+session.send(data_head)
 session.close()
 

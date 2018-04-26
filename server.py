@@ -96,6 +96,8 @@ while True:
         Del_File(head_data[3])
     elif comp(head_data,(1,2,1)):
         Save_File(head_data[3])
+    elif comp(head_data,(2,3,3)):
+        break
     else:
-        a=input()
+        print("Unknown")
 
