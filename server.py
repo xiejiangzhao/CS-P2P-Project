@@ -56,10 +56,20 @@ def Send_File(filename_len):
             file_len_sum+=len(file_data)
             connect.send(data_head+file_data)
         print("传输结束,共"+str(file_len_sum)+"个字节")
-        data_head=Build_Head(1,1,1,0)
-        connect.send(data_head)
         f.close()
-    
+
+def Del_File(filename_len):
+    filename_byte=recv(connect,filename_len)
+    filename=pickle.loads(filename_byte)
+    info="成功删除"
+    try:
+        os.remove(filename)
+    except:
+        info="删除失败"
+    info_byte=pickle.dumps(info)
+    if(len(info_byte)== 0):print("fuck")
+    data_head=Build_Head(0,1,1,len(info_byte))
+    connect.send(data_head+info_byte)
 while True:
     request_head=recv(connect,8)
     head_data=struct.unpack('hhhh',request_head)
@@ -67,6 +77,8 @@ while True:
         Send_Dict()
     elif comp(head_data,(1,0,1)):
         Send_File(head_data[3])
+    elif comp(head_data,(0,1,1)):
+        Del_File(head_data[3])
     else:
         a=input()
 

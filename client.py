@@ -47,6 +47,17 @@ def Down_File(filename):
         print("传输结束,共"+str(file_len_sum)+"个字节")
     f.close()
 
+def Del_File(filename):
+    filename_byte=pickle.dumps(filename)
+    data_head=Build_Head(0,1,1,len(filename_byte))
+    session.send(data_head+filename_byte)
+    response_head=recv(session,8)
+    length=struct.unpack('hhhh',response_head)[3]
+    response=recv(session,length)
+    data=pickle.loads(response)
+    print(data)
+    return
+
 def Terminal():
     command=input(">>>")
     while command!='exit':
@@ -55,6 +66,9 @@ def Terminal():
         elif command=='download':
             filename=input("输入文件名:")
             Down_File(filename)
+        elif command=='del':
+            filename=input("输入文件名:")
+            Del_File(filename)
         else:
             print("命令未找到")
         command=input(">>>")
