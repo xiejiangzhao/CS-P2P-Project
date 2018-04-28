@@ -36,9 +36,12 @@ def Down_File(filename):
     filename_byte=pickle.dumps(filename)
     session.send(Build_Head(1,0,1,len(filename_byte))+filename_byte)
     file_len_sum=0
+    file_len=struct.unpack('hhhh',recv(session,8))[3]
+    if file_len== -1:
+        print("文件不存在")
+        return
     with open(filename,'wb+') as f:
         file_data=b''
-        file_len=struct.unpack('hhhh',recv(session,8))[3]
         while file_len>0:
             file_len_sum+=file_len
             file_data=recv(session,file_len)
@@ -59,6 +62,9 @@ def Del_File(filename):
     return
 
 def Send_File(filename):
+    if not os.path.exists(filename):
+        print("文件不存在")
+        return
     filename_byte=pickle.dumps(filename)
     session.send(Build_Head(1,2,1,len(filename_byte))+filename_byte)
     file_len_sum=0

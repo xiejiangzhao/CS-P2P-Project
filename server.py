@@ -25,7 +25,7 @@ def Creat_Connect():
     connect,addr=session.accept()
     ssl_conn = context.wrap_socket(connect, server_side=True)
     print("Connect to "+str(addr))
-    return ssl_conn
+    return ssl_conn,addr
 
 def recv(obj,length):
     data=b''
@@ -52,6 +52,10 @@ def Send_File(connect,filename_len):
     filename_byte=recv(connect,filename_len)
     filename=pickle.loads(filename_byte)
     file_len_sum=0
+    if not os.path.exists(filename):
+        data_head=Build_Head(1,1,1,-1)
+        connect.send(data_head)
+        return
     with open(filename,'rb') as f:
         file_data=b'0'
         while len(file_data)!=0:
@@ -88,25 +92,30 @@ def Del_File(connect,filename_len):
     info_byte=pickle.dumps(info)
     data_head=Build_Head(0,1,1,len(info_byte))
     connect.send(data_head+info_byte)
-def Task(connect):
+def Task(connect,addr):
     while True:
         request_head=recv(connect,8)
         head_data=struct.unpack('hhhh',request_head)
         if comp(head_data,(0,0,1)):
+            print("Send file list to "+addr[0]+":"+str(addr[1]))
             Send_Dict(connect)
         elif comp(head_data,(1,0,1)):
+            print("Send file to "+addr[0]+":"+str(addr[1]))
             Send_File(connect,head_data[3])
         elif comp(head_data,(0,1,1)):
+            print("Del file order by "+addr[0]+":"+str(addr[1]))
             Del_File(connect,head_data[3])
         elif comp(head_data,(1,2,1)):
+            print("Save file from "+addr[0]+":"+str(addr[1]))
             Save_File(connect,head_data[3])
         elif comp(head_data,(2,3,3)):
+            print("Close connection by "+addr[0]+":"+str(addr[1]))
             break
         else:
             print("Unknown")
 
 while True:
-    conn_thread=Creat_Connect()
-    new_thread=threading.Thread(target=Task,args=(conn_thread,))
+    conn_thread,addr=Creat_Connect()
+    new_thread=threading.Thread(target=Task,args=(conn_thread,addr))
     new_thread.start()
 
