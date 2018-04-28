@@ -3,11 +3,13 @@ import struct
 import os
 import pickle
 import ssl
+import threading
 HOST = '127.0.0.1'
 PORT = 8002
 context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
 context.load_cert_chain(certfile="mycertfile.pem", keyfile="mykeyfile.pem")
 session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+session.bind((HOST, PORT))
 service_Type=None
 service_Num=None
 Version=None
@@ -18,15 +20,13 @@ def Build_Head(service_Type,service_Num,Version,data_len):
     return struct.pack('hhhh',service_Type,service_Num,Version,data_len)
 
 def Creat_Connect():
-    session.bind((HOST, PORT))
-    session.listen(1)
+    session.listen(3)
     print("Waiting for connection")
     connect,addr=session.accept()
     ssl_conn = context.wrap_socket(connect, server_side=True)
     print("Connect to "+str(addr))
     return ssl_conn
 
-connect=Creat_Connect()
 def recv(obj,length):
     data=b''
     while len(data)<length:
@@ -39,7 +39,7 @@ def comp(tuple1,tuple2):
             return False
     return True
 
-def Send_Dict():
+def Send_Dict(connect):
     files_data=pickle.dumps(os.listdir("./"))
     service_Type=0
     service_Num=0
@@ -48,7 +48,7 @@ def Send_Dict():
     data_head=struct.pack('hhhh',service_Type,service_Num,Version,data_len)
     connect.send(data_head+files_data)
 
-def Send_File(filename_len):
+def Send_File(connect,filename_len):
     filename_byte=recv(connect,filename_len)
     filename=pickle.loads(filename_byte)
     file_len_sum=0
@@ -62,7 +62,7 @@ def Send_File(filename_len):
         print("传输结束,共"+str(file_len_sum)+"个字节")
         f.close()
 
-def Save_File(filename_len):
+def Save_File(connect,filename_len):
     filename_byte=recv(connect,filename_len)
     filename=pickle.loads(filename_byte)
     file_len_sum=0
@@ -77,7 +77,7 @@ def Save_File(filename_len):
         print("传输结束,共"+str(file_len_sum)+"个字节")
     f.close()
     pass
-def Del_File(filename_len):
+def Del_File(connect,filename_len):
     filename_byte=recv(connect,filename_len)
     filename=pickle.loads(filename_byte)
     info="成功删除"
@@ -89,19 +89,25 @@ def Del_File(filename_len):
     if(len(info_byte)== 0):print("fuck")
     data_head=Build_Head(0,1,1,len(info_byte))
     connect.send(data_head+info_byte)
+def Task(connect):
+    while True:
+        request_head=recv(connect,8)
+        head_data=struct.unpack('hhhh',request_head)
+        if comp(head_data,(0,0,1)):
+            Send_Dict(connect)
+        elif comp(head_data,(1,0,1)):
+            Send_File(connect,head_data[3])
+        elif comp(head_data,(0,1,1)):
+            Del_File(connect,head_data[3])
+        elif comp(head_data,(1,2,1)):
+            Save_File(connect,head_data[3])
+        elif comp(head_data,(2,3,3)):
+            break
+        else:
+            print("Unknown")
+
 while True:
-    request_head=recv(connect,8)
-    head_data=struct.unpack('hhhh',request_head)
-    if comp(head_data,(0,0,1)):
-        Send_Dict()
-    elif comp(head_data,(1,0,1)):
-        Send_File(head_data[3])
-    elif comp(head_data,(0,1,1)):
-        Del_File(head_data[3])
-    elif comp(head_data,(1,2,1)):
-        Save_File(head_data[3])
-    elif comp(head_data,(2,3,3)):
-        break
-    else:
-        print("Unknown")
+    cond=Creat_Connect()
+    me=threading.Thread(target=Task,args=(cond,))
+    me.start()
 
