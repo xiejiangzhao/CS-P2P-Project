@@ -10,6 +10,7 @@ context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
 context.load_cert_chain(certfile="mycertfile.pem", keyfile="mykeyfile.pem")
 session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 session.bind((HOST, PORT))
+session.listen(3)
 service_Type=None
 service_Num=None
 Version=None
@@ -20,7 +21,6 @@ def Build_Head(service_Type,service_Num,Version,data_len):
     return struct.pack('hhhh',service_Type,service_Num,Version,data_len)
 
 def Creat_Connect():
-    session.listen(3)
     print("Waiting for connection")
     connect,addr=session.accept()
     ssl_conn = context.wrap_socket(connect, server_side=True)
@@ -86,7 +86,6 @@ def Del_File(connect,filename_len):
     except:
         info="删除失败"
     info_byte=pickle.dumps(info)
-    if(len(info_byte)== 0):print("fuck")
     data_head=Build_Head(0,1,1,len(info_byte))
     connect.send(data_head+info_byte)
 def Task(connect):
@@ -107,7 +106,7 @@ def Task(connect):
             print("Unknown")
 
 while True:
-    cond=Creat_Connect()
-    me=threading.Thread(target=Task,args=(cond,))
-    me.start()
+    conn_thread=Creat_Connect()
+    new_thread=threading.Thread(target=Task,args=(conn_thread,))
+    new_thread.start()
 
