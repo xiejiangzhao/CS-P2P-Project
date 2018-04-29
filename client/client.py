@@ -3,8 +3,9 @@ import socket
 import os
 import struct
 import pickle,ssl
-HOST = '127.0.0.1'
-PORT = 8002
+import time
+HOST = input("Input HOST:")
+PORT = int(input("Input PORT:"))
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 session = ssl.wrap_socket(s, ca_certs="./mycertfile.pem", cert_reqs=ssl.CERT_REQUIRED)
 service_Type=None
@@ -42,12 +43,15 @@ def Down_File(filename):
         return
     with open(filename,'wb+') as f:
         file_data=b''
+        start=time.clock()
         while file_len>0:
             file_len_sum+=file_len
             file_data=recv(session,file_len)
             f.write(file_data)
             file_len=struct.unpack('hhhh',recv(session,8))[3]
+        elapsed=(time.clock()-start)
         print("传输结束,共"+str(file_len_sum)+"个字节")
+        print("Time used:",elapsed)
     f.close()
 
 def Del_File(filename):
@@ -70,11 +74,14 @@ def Send_File(filename):
     file_len_sum=0
     with open(filename,'rb') as f:
         file_data=b'0'
+        start=time.clock()
         while len(file_data)!=0:
             file_data=f.read(1460)
             data_head=Build_Head(1,3,1,len(file_data))
             file_len_sum+=len(file_data)
             session.send(data_head+file_data)
+        elapsed=(time.clock()-start)
+        print("Time used:",elapsed)
         print("传输结束,共"+str(file_len_sum)+"个字节")
         f.close()
     f.close()

@@ -4,8 +4,8 @@ import os
 import pickle
 import ssl
 import threading
-HOST = '127.0.0.1'
-PORT = 8002
+HOST = input("Input HOST:")
+PORT = int(input("Input PORT:"))
 context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
 context.load_cert_chain(certfile="mycertfile.pem", keyfile="mykeyfile.pem")
 session = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
